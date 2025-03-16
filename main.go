@@ -80,24 +80,18 @@ func main() {
 	for _, stock := range config.Stocks {
 		currentAmount := amountsBySymbol[stock.Symbol]
 		currentPercentage := (float64(currentAmount) / float64(total)) * 100
-		symbolData[stock.Symbol] = SymbolData{
+		data := SymbolData{
 			Amount:            int64(currentAmount),
 			CurrentPercentage: currentPercentage,
 			DesiredPercentage: stock.DesiredPercentage,
 			Difference:        stock.DesiredPercentage - currentPercentage,
 		}
+
+		symbolData[stock.Symbol] = data
+		fmt.Printf("%s, Current: %.2f%%, Desired: %.2f%%, Difference: %.2f%%\n",
+			stock.Symbol, data.CurrentPercentage, data.DesiredPercentage, data.Difference)
 	}
 
-	for symbol, data := range symbolData {
-		difference := data.Difference
-		if difference > 0 {
-			fmt.Printf("%s, Current: %.2f%%, Desired: %.2f%%, Difference: +%.2f%%\n",
-				symbol, data.CurrentPercentage, data.DesiredPercentage, difference)
-		} else {
-			fmt.Printf("%s, Current: %.2f%%, Desired: %.2f%%, Difference: %.2f%%\n",
-				symbol, data.CurrentPercentage, data.DesiredPercentage, difference)
-		}
-	}
 	fmt.Printf("\nTotal: %s\n", formatAmount(total))
 }
 
