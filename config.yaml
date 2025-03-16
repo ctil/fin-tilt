@@ -1,0 +1,12 @@
+stocks:
+  - symbol: FBTC
+    desired_percentage: 0.8
+  - symbol: FETH
+    desired_percentage: 0.2
+  - symbol: FSKAX
+    desired_percentage: 67
+  - symbol: FTIHX
+    desired_percentage: 17
+  - symbol: FXNAX
+    desired_percentage: 15
+available_to_deposit: 0
