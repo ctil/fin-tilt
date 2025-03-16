@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -12,7 +13,8 @@ import (
 )
 
 type SymbolData struct {
-	Amount            int64
+	Amount            int
+	AmountNeeded      int
 	CurrentPercentage float64
 	DesiredPercentage float64
 	Difference        float64
@@ -80,19 +82,22 @@ func main() {
 	for _, stock := range config.Stocks {
 		currentAmount := amountsBySymbol[stock.Symbol]
 		currentPercentage := (float64(currentAmount) / float64(total)) * 100
+		difference := stock.DesiredPercentage - currentPercentage
 		data := SymbolData{
-			Amount:            int64(currentAmount),
+			Amount:            currentAmount,
 			CurrentPercentage: currentPercentage,
 			DesiredPercentage: stock.DesiredPercentage,
-			Difference:        stock.DesiredPercentage - currentPercentage,
+			Difference:        difference,
+			AmountNeeded:      int(math.Floor(float64(total) * (difference / 100))),
 		}
 
 		symbolData[stock.Symbol] = data
-		fmt.Printf("%s, Current: %.2f%%, Desired: %.2f%%, Difference: %.2f%%\n",
-			stock.Symbol, data.CurrentPercentage, data.DesiredPercentage, data.Difference)
+		needed := formatAmount(data.AmountNeeded)
+		fmt.Printf("\n%s (%s)\n    Current: %05.2f%%, Desired: %05.2f%%, Diff: %05.2f%%, Amount Needed: %s\n",
+			stock.Symbol, stock.Description, data.CurrentPercentage, data.DesiredPercentage, data.Difference, needed)
 	}
 
-	fmt.Printf("\nTotal: %s\n", formatAmount(total))
+	// fmt.Printf("\nTotal: %s\n", formatAmount(total))
 }
 
 type Config struct {
@@ -103,6 +108,7 @@ type Config struct {
 type Stock struct {
 	Symbol            string  `yaml:"symbol"`
 	DesiredPercentage float64 `yaml:"desired_percentage"`
+	Description       string  `yaml:"description"`
 }
 
 func parseConfig(filePath string) (*Config, error) {
