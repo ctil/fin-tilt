@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io"
 	"math"
@@ -32,19 +33,21 @@ type Stock struct {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: fin-tilt <file-path>")
-		return
-	}
-	filePath := os.Args[1]
-	file, err := os.Open(filePath)
+	var configPath string
+	var portfolioCsv string
+	flag.StringVar(&configPath, "config", "config.yaml", "path to the config file")
+	flag.StringVar(&portfolioCsv, "csv", "", "path to a Fidelity portfolio csv file")
+
+	flag.Parse()
+
+	file, err := os.Open(portfolioCsv)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 	defer file.Close()
 
-	config, err := parseConfig("config.yaml")
+	config, err := parseConfig(configPath)
 	if err != nil {
 		fmt.Println("Error parsing config:", err)
 		return
