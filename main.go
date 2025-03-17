@@ -17,12 +17,23 @@ type SymbolData struct {
 	AmountNeeded      int
 	CurrentPercentage float64
 	DesiredPercentage float64
-	Difference        float64
+	Drift             float64
+}
+
+type Config struct {
+	Stocks             []Stock `yaml:"stocks"`
+	AvailableToDeposit int     `yaml:"available_to_deposit"`
+}
+
+type Stock struct {
+	Symbol            string  `yaml:"symbol"`
+	DesiredPercentage float64 `yaml:"desired_percentage"`
+	Description       string  `yaml:"description"`
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run . <file-path>")
+		fmt.Println("Usage: fin-tilt <file-path>")
 		return
 	}
 	filePath := os.Args[1]
@@ -82,33 +93,22 @@ func main() {
 	for _, stock := range config.Stocks {
 		currentAmount := amountsBySymbol[stock.Symbol]
 		currentPercentage := (float64(currentAmount) / float64(total)) * 100
-		difference := stock.DesiredPercentage - currentPercentage
+		drift := currentPercentage - stock.DesiredPercentage
 		data := SymbolData{
 			Amount:            currentAmount,
 			CurrentPercentage: currentPercentage,
 			DesiredPercentage: stock.DesiredPercentage,
-			Difference:        difference,
-			AmountNeeded:      int(math.Floor(float64(total) * (difference / 100))),
+			Drift:             drift,
+			AmountNeeded:      int(math.Floor(float64(total) * (-drift / 100))),
 		}
 
 		symbolData[stock.Symbol] = data
 		needed := formatAmount(data.AmountNeeded)
-		fmt.Printf("\n%s (%s)\n    Current: %05.2f%%, Desired: %05.2f%%, Diff: %05.2f%%, Amount Needed: %s\n",
-			stock.Symbol, stock.Description, data.CurrentPercentage, data.DesiredPercentage, data.Difference, needed)
+		fmt.Printf("\n%s (%s)\n    Current: %05.2f%%, Desired: %05.2f%%, Drift: %+05.2f%%, Amount Needed: %s\n",
+			stock.Symbol, stock.Description, data.CurrentPercentage, data.DesiredPercentage, data.Drift, needed)
 	}
 
-	// fmt.Printf("\nTotal: %s\n", formatAmount(total))
-}
-
-type Config struct {
-	Stocks             []Stock `yaml:"stocks"`
-	AvailableToDeposit int     `yaml:"available_to_deposit"`
-}
-
-type Stock struct {
-	Symbol            string  `yaml:"symbol"`
-	DesiredPercentage float64 `yaml:"desired_percentage"`
-	Description       string  `yaml:"description"`
+	fmt.Printf("\nTotal: %s\n", formatAmount(total))
 }
 
 func parseConfig(filePath string) (*Config, error) {
