@@ -9,9 +9,6 @@ stocks:
     desired_percentage: 15
     description: Total Bond Market
   - symbol: FBTC
-    desired_percentage: 0.8
+    desired_percentage: 1
     description: Bitcoin
-  - symbol: FETH
-    desired_percentage: 0.2
-    description: Ethereum
 available_to_deposit: 0
