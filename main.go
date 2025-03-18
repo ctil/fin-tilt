@@ -17,8 +17,13 @@ type SymbolData struct {
 	Amount            int
 	AmountNeeded      int
 	CurrentPercentage float64
-	DesiredPercentage float64
+	TargetPercentage  float64
 	Drift             float64
+}
+
+type DepositData struct {
+	Symbol          string
+	AmountToDeposit int
 }
 
 type Config struct {
@@ -27,9 +32,9 @@ type Config struct {
 }
 
 type Stock struct {
-	Symbol            string  `yaml:"symbol"`
-	DesiredPercentage float64 `yaml:"desired_percentage"`
-	Description       string  `yaml:"description"`
+	Symbol           string  `yaml:"symbol"`
+	TargetPercentage float64 `yaml:"target_percentage"`
+	Description      string  `yaml:"description"`
 }
 
 func main() {
@@ -120,30 +125,47 @@ func rebalance(config *Config, args []string) {
 	for _, stock := range config.Stocks {
 		currentAmount := amountsBySymbol[stock.Symbol]
 		currentPercentage := (float64(currentAmount) / float64(total)) * 100
-		drift := currentPercentage - stock.DesiredPercentage
+		drift := currentPercentage - stock.TargetPercentage
 		data := SymbolData{
 			Amount:            currentAmount,
 			CurrentPercentage: currentPercentage,
-			DesiredPercentage: stock.DesiredPercentage,
+			TargetPercentage:  stock.TargetPercentage,
 			Drift:             drift,
-			AmountNeeded:      int(math.Floor(float64(total) * (-drift / 100))),
+			AmountNeeded:      int(math.Round(float64(total) * (-drift / 100))),
 		}
 
 		symbolData[stock.Symbol] = data
 		needed := formatAmount(data.AmountNeeded)
-		fmt.Printf("\n%s (%s)\n    Current: %05.2f%%, Desired: %05.2f%%, Drift: %+05.2f%%, Amount Needed: %s\n",
-			stock.Symbol, stock.Description, data.CurrentPercentage, data.DesiredPercentage, data.Drift, needed)
+		fmt.Printf("\n%s (%s)\n    Current: %05.2f%%, Target: %05.2f%%, Drift: %+05.2f%%, Amount Needed: %s\n",
+			stock.Symbol, stock.Description, data.CurrentPercentage, data.TargetPercentage, data.Drift, needed)
 	}
 
 	fmt.Printf("\nTotal: %s\n", formatAmount(total))
 }
 
 func deposit(config *Config, args []string) {
-	var amount string
+	var amount int
 	flagSet := flag.NewFlagSet("deposit", flag.ExitOnError)
-	flagSet.StringVar(&amount, "amount", "", "amount to deposit")
+	// TODO: make this a float
+	flagSet.IntVar(&amount, "amount", 0, "amount to deposit")
 	flagSet.Parse(args)
-	fmt.Println("Amount to deposit: ", amount)
+
+	depositAmounts := make([]DepositData, 0)
+	// Convert amount to cents
+	amount *= 100
+	total := 0
+
+	for _, stock := range config.Stocks {
+		amountToDeposit := int(math.Floor(float64(amount) * (stock.TargetPercentage / 100)))
+		total += amountToDeposit
+		depositAmounts = append(depositAmounts, DepositData{
+			Symbol:          stock.Symbol,
+			AmountToDeposit: amountToDeposit,
+		})
+		fmt.Printf("%s: %s\n", stock.Symbol, formatAmount(amountToDeposit))
+	}
+	remainder := amount - total
+	fmt.Println("Remainder: ", remainder)
 }
 
 func parseConfig(filePath string) (*Config, error) {
