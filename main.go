@@ -34,11 +34,40 @@ type Stock struct {
 
 func main() {
 	var configPath string
-	var portfolioCsv string
 	flag.StringVar(&configPath, "config", "config.yaml", "path to the config file")
-	flag.StringVar(&portfolioCsv, "csv", "", "path to a Fidelity portfolio csv file")
 
 	flag.Parse()
+
+	if len(flag.Args()) < 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	subCmd := flag.Arg(0)
+	subCmdArgs := flag.Args()[1:]
+
+	config, err := parseConfig(configPath)
+	if err != nil {
+		fmt.Println("Error parsing config:", err)
+		os.Exit(1)
+	}
+
+	switch subCmd {
+	case "rebalance":
+		rebalance(config, subCmdArgs)
+	case "deposit":
+		deposit(config, subCmdArgs)
+	default:
+		fmt.Println("Unknown command:", subCmd)
+	}
+
+}
+
+func rebalance(config *Config, args []string) {
+	var portfolioCsv string
+	flagSet := flag.NewFlagSet("rebalance", flag.ExitOnError)
+	flagSet.StringVar(&portfolioCsv, "csv", "", "path to a Fidelity portfolio csv file")
+	flagSet.Parse(args)
 
 	file, err := os.Open(portfolioCsv)
 	if err != nil {
@@ -47,11 +76,6 @@ func main() {
 	}
 	defer file.Close()
 
-	config, err := parseConfig(configPath)
-	if err != nil {
-		fmt.Println("Error parsing config:", err)
-		return
-	}
 	symbolsToRebalance := make(map[string]bool)
 	for _, stock := range config.Stocks {
 		symbolsToRebalance[stock.Symbol] = true
@@ -112,6 +136,14 @@ func main() {
 	}
 
 	fmt.Printf("\nTotal: %s\n", formatAmount(total))
+}
+
+func deposit(config *Config, args []string) {
+	var amount string
+	flagSet := flag.NewFlagSet("deposit", flag.ExitOnError)
+	flagSet.StringVar(&amount, "amount", "", "amount to deposit")
+	flagSet.Parse(args)
+	fmt.Println("Amount to deposit: ", amount)
 }
 
 func parseConfig(filePath string) (*Config, error) {
