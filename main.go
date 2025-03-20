@@ -71,8 +71,12 @@ func main() {
 func rebalance(config *Config, args []string) {
 	var portfolioCsv string
 	flagSet := flag.NewFlagSet("rebalance", flag.ExitOnError)
-	flagSet.StringVar(&portfolioCsv, "csv", "", "path to a Fidelity portfolio csv file")
-	flagSet.Parse(args)
+	if len(args) < 1 {
+		fmt.Println("Usage: fin-viz rebalance <portfolio.csv>")
+		return
+	}
+	portfolioCsv = args[0]
+	flagSet.Parse(args[1:])
 
 	file, err := os.Open(portfolioCsv)
 	if err != nil {
@@ -146,8 +150,16 @@ func rebalance(config *Config, args []string) {
 func deposit(config *Config, args []string) {
 	var amount int
 	flagSet := flag.NewFlagSet("deposit", flag.ExitOnError)
-	// TODO: make this a float
-	flagSet.IntVar(&amount, "amount", 0, "amount to deposit")
+	if len(args) < 1 {
+		fmt.Println("Usage: fin-viz deposit <amount>")
+		return
+	}
+	amount, err := strconv.Atoi(args[0])
+	if err != nil {
+		fmt.Println("Error parsing amount:", err)
+		return
+	}
+	flagSet.Parse(args[1:])
 	flagSet.Parse(args)
 
 	depositAmounts := make([]DepositData, 0)
