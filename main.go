@@ -21,11 +21,6 @@ type SymbolData struct {
 	Drift             float64
 }
 
-type DepositData struct {
-	Symbol          string
-	AmountToDeposit int
-}
-
 type Config struct {
 	Stocks             []Stock `yaml:"stocks"`
 	AvailableToDeposit int     `yaml:"available_to_deposit"`
@@ -170,7 +165,6 @@ func deposit(config *Config, args []string) {
 	}
 	flagSet.Parse(args[1:])
 
-	depositAmounts := make([]DepositData, 0)
 	// Convert amount to cents
 	amount *= 100
 	total := 0
@@ -178,10 +172,6 @@ func deposit(config *Config, args []string) {
 	for _, stock := range config.Stocks {
 		amountToDeposit := int(math.Floor(float64(amount) * (stock.TargetPercentage / 100)))
 		total += amountToDeposit
-		depositAmounts = append(depositAmounts, DepositData{
-			Symbol:          stock.Symbol,
-			AmountToDeposit: amountToDeposit,
-		})
 		fmt.Printf("%s: %s\n", stock.Symbol, formatAmount(amountToDeposit, false))
 	}
 }
