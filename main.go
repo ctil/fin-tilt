@@ -169,7 +169,6 @@ func deposit(config *Config, args []string) {
 		return
 	}
 	flagSet.Parse(args[1:])
-	flagSet.Parse(args)
 
 	depositAmounts := make([]DepositData, 0)
 	// Convert amount to cents
