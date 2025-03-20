@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -104,10 +105,10 @@ func rebalance(config *Config, args []string) {
 	for {
 		record, err := reader.Read()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
-			if parseErr, ok := err.(*csv.ParseError); ok && parseErr.Err == csv.ErrFieldCount {
+			if errors.Is(err, csv.ErrFieldCount) {
 				// The fidelity csv has some malformed lines at the end
 				continue
 			}
@@ -144,11 +145,34 @@ func rebalance(config *Config, args []string) {
 
 		symbolData[stock.Symbol] = data
 		needed := formatAmount(data.AmountNeeded, false)
-		fmt.Printf("\n%s (%s)\n    Current: %05.2f%%, Target: %05.2f%%, Drift: %+05.2f%%, Amount Needed: %s\n",
-			stock.Symbol, stock.Description, data.CurrentPercentage, data.TargetPercentage, data.Drift, needed)
+		if data.AmountNeeded > 0 {
+			needed = green("+" + needed)
+		} else {
+			needed = red(needed)
+		}
+		driftStr := fmt.Sprintf("%.2f%%", data.Drift)
+		if data.Drift > 0 {
+			driftStr = green("+" + driftStr)
+		} else {
+			driftStr = red(driftStr)
+		}
+		fmt.Println("\n" + strings.Repeat("-", 60))
+		fmt.Printf("%s - %.2f%% (%s)\n", stock.Symbol, data.CurrentPercentage, driftStr)
+		fmt.Println(strings.Repeat("-", 60))
+		fmt.Printf("%s\n", stock.Description)
+		fmt.Printf("Needed: %s\n", needed)
+		fmt.Printf("Current Total: %s\n", formatAmount(data.Amount, true))
 	}
 
 	fmt.Printf("\nTotal: %s\n", formatAmount(total, true))
+}
+
+func green(str string) string {
+	return "\033[32m" + str + "\033[0m"
+}
+
+func red(str string) string {
+	return "\033[31m" + str + "\033[0m"
 }
 
 func deposit(config *Config, args []string) {
@@ -212,5 +236,8 @@ func formatAmount(amount int, includeCommas bool) string {
 		}
 	}
 	amountStr = dollars + "." + cents
+	if amount < 0 {
+		return amountStr[:1] + "$" + amountStr[1:]
+	}
 	return "$" + amountStr
 }
