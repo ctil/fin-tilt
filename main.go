@@ -41,6 +41,14 @@ func main() {
 	var configPath string
 	flag.StringVar(&configPath, "config", "config.yaml", "path to the config file")
 
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: fin-tilt -config <config.yaml> <command> [<args>]\n")
+		fmt.Println("Commands:")
+		fmt.Println("  rebalance <portfolio.csv>  Rebalance the portfolio based on the given CSV file")
+		fmt.Println("  deposit <amount>           Deposit the specified amount")
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
@@ -64,15 +72,16 @@ func main() {
 		deposit(config, subCmdArgs)
 	default:
 		fmt.Println("Unknown command:", subCmd)
+		flag.Usage()
+		os.Exit(1)
 	}
-
 }
 
 func rebalance(config *Config, args []string) {
 	var portfolioCsv string
 	flagSet := flag.NewFlagSet("rebalance", flag.ExitOnError)
 	if len(args) < 1 {
-		fmt.Println("Usage: fin-viz rebalance <portfolio.csv>")
+		flag.Usage()
 		return
 	}
 	portfolioCsv = args[0]
@@ -151,7 +160,7 @@ func deposit(config *Config, args []string) {
 	var amount int
 	flagSet := flag.NewFlagSet("deposit", flag.ExitOnError)
 	if len(args) < 1 {
-		fmt.Println("Usage: fin-viz deposit <amount>")
+		flag.Usage()
 		return
 	}
 	amount, err := strconv.Atoi(args[0])
