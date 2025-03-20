@@ -148,12 +148,12 @@ func rebalance(config *Config, args []string) {
 		}
 
 		symbolData[stock.Symbol] = data
-		needed := formatAmount(data.AmountNeeded)
+		needed := formatAmount(data.AmountNeeded, false)
 		fmt.Printf("\n%s (%s)\n    Current: %05.2f%%, Target: %05.2f%%, Drift: %+05.2f%%, Amount Needed: %s\n",
 			stock.Symbol, stock.Description, data.CurrentPercentage, data.TargetPercentage, data.Drift, needed)
 	}
 
-	fmt.Printf("\nTotal: %s\n", formatAmount(total))
+	fmt.Printf("\nTotal: %s\n", formatAmount(total, true))
 }
 
 func deposit(config *Config, args []string) {
@@ -183,10 +183,8 @@ func deposit(config *Config, args []string) {
 			Symbol:          stock.Symbol,
 			AmountToDeposit: amountToDeposit,
 		})
-		fmt.Printf("%s: %s\n", stock.Symbol, formatAmount(amountToDeposit))
+		fmt.Printf("%s: %s\n", stock.Symbol, formatAmount(amountToDeposit, false))
 	}
-	remainder := amount - total
-	fmt.Println("Remainder: ", remainder)
 }
 
 func parseConfig(filePath string) (*Config, error) {
@@ -215,8 +213,15 @@ func amountToInt(amount string) (int, error) {
 	return amountInt, nil
 }
 
-func formatAmount(amount int) string {
+func formatAmount(amount int, includeCommas bool) string {
 	amountStr := strconv.Itoa(amount)
-	amountStr = amountStr[:len(amountStr)-2] + "." + amountStr[len(amountStr)-2:]
+	dollars := amountStr[:len(amountStr)-2]
+	cents := amountStr[len(amountStr)-2:]
+	if includeCommas {
+		for i := len(dollars) - 3; i > 0; i -= 3 {
+			dollars = dollars[:i] + "," + dollars[i:]
+		}
+	}
+	amountStr = dollars + "." + cents
 	return "$" + amountStr
 }
