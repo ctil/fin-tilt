@@ -230,6 +230,14 @@ func parseConfig(filePath string) (*Config, error) {
 		return nil, err
 	}
 
+	totalPercentage := 0.0
+	for _, stock := range config.Stocks {
+		totalPercentage += stock.TargetPercentage
+	}
+
+	if math.Abs(totalPercentage-100.0) > 1e-9 {
+		return nil, errors.New("target percentages do not add up to 100")
+	}
 	return &config, nil
 }
 
