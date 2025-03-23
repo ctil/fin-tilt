@@ -1,6 +1,6 @@
 # Fin-Tilt
 
-Fin-Tilt is a command-line tool for managing and rebalancing your stock portfolio based on a configuration file and a CSV file containing your current portfolio values. It is based on the CSV file that Fidelity provides.
+Fin-Tilt is a command-line tool for managing and rebalancing your stock portfolio based on a configuration file that specifies a desired asset allocation and a CSV file containing your current portfolio values. It is based on the CSV file that Fidelity provides. The name Fin Tilt was inspired by the classic game [Full Tilt! Pinball](https://en.wikipedia.org/wiki/Full_Tilt!_Pinball).
 
 ## Installation
 
