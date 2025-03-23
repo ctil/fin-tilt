@@ -38,6 +38,12 @@ Rebalance your portfolio based on the current values provided in a CSV file.
 ./fin-tilt -config config.yaml rebalance portfolio.csv
 ```
 
+Rebalance your portfolio while including an additional $5000 deposit.
+
+```sh
+./fin-tilt -config config.yaml rebalance -toDeposit 5000 portfolio.csv
+```
+
 The CSV file should have the following columns: `Symbol` and `Current Value`. If you download a CSV of your portfolio from Fidelity, it will have these columns.
 
 ### Deposit

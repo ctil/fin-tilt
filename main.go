@@ -24,8 +24,7 @@ type SymbolData struct {
 }
 
 type Config struct {
-	Stocks             []Stock `yaml:"stocks"`
-	AvailableToDeposit int     `yaml:"available_to_deposit"`
+	Stocks []Stock `yaml:"stocks"`
 }
 
 type Stock struct {
@@ -36,12 +35,12 @@ type Stock struct {
 
 func main() {
 	var configPath string
-	flag.StringVar(&configPath, "config", "config.yaml", "path to the config file")
+	flag.StringVar(&configPath, "config", "config.yaml", "Config file that specifies a desired asset allocation")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: fin-tilt -config <config.yaml> <command> [<args>]\n")
 		fmt.Println("Commands:")
-		fmt.Println("  rebalance <portfolio.csv>  Rebalance the portfolio based on the given CSV file")
+		fmt.Println("  rebalance <portfolio.csv> [-toDeposit <amount>]  Rebalance portfolio based on current values in CSV file")
 		fmt.Println("  deposit <amount>           Deposit the specified amount")
 		flag.PrintDefaults()
 	}
@@ -76,13 +75,18 @@ func main() {
 
 func rebalance(config *Config, args []string) {
 	var portfolioCsv string
+	var toDeposit int
 	flagSet := flag.NewFlagSet("rebalance", flag.ExitOnError)
+	flagSet.IntVar(&toDeposit, "toDeposit", 0, "Additional amount to deposit, in dollars")
 	if len(args) < 1 {
 		flag.Usage()
 		return
 	}
 	portfolioCsv = args[0]
 	flagSet.Parse(args[1:])
+
+	// Convert to cents
+	toDeposit *= 100
 
 	file, err := os.Open(portfolioCsv)
 	if err != nil {
@@ -97,7 +101,7 @@ func rebalance(config *Config, args []string) {
 	}
 	reader := csv.NewReader(file)
 	amountsBySymbol := make(map[string]int)
-	total := 0
+	total := toDeposit
 	header, err := reader.Read()
 	if err != nil {
 		fmt.Println("Error reading header:", err)
@@ -137,6 +141,7 @@ func rebalance(config *Config, args []string) {
 			return
 		}
 	}
+
 	symbolData := make(map[string]SymbolData)
 	for _, stock := range config.Stocks {
 		currentAmount := amountsBySymbol[stock.Symbol]
@@ -171,7 +176,12 @@ func rebalance(config *Config, args []string) {
 		fmt.Printf("Current Total: %s\n", formatAmount(data.Amount, true))
 	}
 
-	fmt.Printf("\nTotal: %s\n", formatAmount(total, true))
+	fmt.Println("\n" + strings.Repeat("-", 60))
+	if toDeposit > 0 {
+		fmt.Printf("Total: %s (includes %s deposit)\n", formatAmount(total, true), formatAmount(toDeposit, true))
+	} else {
+		fmt.Printf("Total: %s\n", formatAmount(total, true))
+	}
 }
 
 func green(str string) string {

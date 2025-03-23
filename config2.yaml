@@ -14,4 +14,3 @@ stocks:
   - symbol: FETH
     target_percentage: 0.2
     description: Ethereum
-available_to_deposit: 0

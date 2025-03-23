@@ -11,4 +11,3 @@ stocks:
   - symbol: FBTC
     target_percentage: 1
     description: Bitcoin
-available_to_deposit: 0
