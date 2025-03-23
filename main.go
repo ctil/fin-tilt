@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -97,9 +98,15 @@ func rebalance(config *Config, args []string) {
 	reader := csv.NewReader(file)
 	amountsBySymbol := make(map[string]int)
 	total := 0
-	// Skip the first line (header)
-	if _, err := reader.Read(); err != nil {
+	header, err := reader.Read()
+	if err != nil {
 		fmt.Println("Error reading header:", err)
+		return
+	}
+	symbolIndex := slices.Index(header, "Symbol")
+	amountIndex := slices.Index(header, "Current Value")
+	if symbolIndex == -1 || amountIndex == -1 {
+		fmt.Println("CSV file must have 'Symbol' and 'Current Value' columns")
 		return
 	}
 	for {
@@ -115,14 +122,14 @@ func rebalance(config *Config, args []string) {
 			fmt.Println("Error:", err)
 			return
 		}
-		symbol := record[2]
+		symbol := record[symbolIndex]
 
 		if !symbolsToRebalance[symbol] {
 			// Ignore any symbols that are not in the config
 			continue
 		}
 
-		amount, err := amountToInt(record[7])
+		amount, err := amountToInt(record[amountIndex])
 		total += amount
 		amountsBySymbol[symbol] += amount
 		if err != nil {
