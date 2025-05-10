@@ -253,6 +253,10 @@ func amountToInt(amount string) (int, error) {
 
 func formatAmount(amount int, includeCommas bool) string {
 	amountStr := strconv.Itoa(amount)
+	if len(amountStr) < 3 {
+		// Ensure at least 3 characters for slicing (e.g., "001" for 1 cent)
+		amountStr = strings.Repeat("0", 3-len(amountStr)) + amountStr
+	}
 	dollars := amountStr[:len(amountStr)-2]
 	cents := amountStr[len(amountStr)-2:]
 	if includeCommas {
