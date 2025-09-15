@@ -1,0 +1,7 @@
+stocks:
+  - symbol: FSKAX
+    target_percentage: 80
+    description: Total US Market
+  - symbol: FTIHX
+    target_percentage: 20
+    description: Total International Market
