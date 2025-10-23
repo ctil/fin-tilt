@@ -1,0 +1,13 @@
+stocks:
+  - symbol: FSKAX
+    target_percentage: 71
+    description: Total US Market
+  - symbol: FTIHX
+    target_percentage: 18
+    description: Total International Market
+  - symbol: FXNAX
+    target_percentage: 10
+    description: Total Bond Market
+  - symbol: FBTC
+    target_percentage: 1
+    description: Bitcoin
