@@ -2,9 +2,13 @@ stocks:
   - symbol: FSKAX
     target_percentage: 67
     description: Total US Market
+    alternatives:
+      - VTI
   - symbol: FTIHX
     target_percentage: 17
     description: Total International Market
+    alternatives:
+      - VXUS
   - symbol: FXNAX
     target_percentage: 15
     description: Total Bond Market

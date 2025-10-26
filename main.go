@@ -28,9 +28,10 @@ type Config struct {
 }
 
 type Stock struct {
-	Symbol           string  `yaml:"symbol"`
-	TargetPercentage float64 `yaml:"target_percentage"`
-	Description      string  `yaml:"description"`
+	Symbol           string   `yaml:"symbol"`
+	TargetPercentage float64  `yaml:"target_percentage"`
+	Description      string   `yaml:"description"`
+	Alternatives     []string `yaml:"alternatives,omitempty"`
 }
 
 func main() {
@@ -95,9 +96,13 @@ func rebalance(config *Config, args []string) {
 	}
 	defer file.Close()
 
-	symbolsToRebalance := make(map[string]bool)
+	// Build a map from any symbol (primary or alternative) to its primary symbol
+	symbolToPrimary := make(map[string]string)
 	for _, stock := range config.Stocks {
-		symbolsToRebalance[stock.Symbol] = true
+		symbolToPrimary[stock.Symbol] = stock.Symbol
+		for _, alt := range stock.Alternatives {
+			symbolToPrimary[alt] = stock.Symbol
+		}
 	}
 	reader := csv.NewReader(file)
 	amountsBySymbol := make(map[string]int)
@@ -128,14 +133,16 @@ func rebalance(config *Config, args []string) {
 		}
 		symbol := record[symbolIndex]
 
-		if !symbolsToRebalance[symbol] {
+		// Look up the primary symbol (handles both primary and alternative symbols)
+		primarySymbol, found := symbolToPrimary[symbol]
+		if !found {
 			// Ignore any symbols that are not in the config
 			continue
 		}
 
 		amount, err := amountToInt(record[amountIndex])
 		total += amount
-		amountsBySymbol[symbol] += amount
+		amountsBySymbol[primarySymbol] += amount
 		if err != nil {
 			fmt.Println("Error parsing amount:", err)
 			return
@@ -238,6 +245,25 @@ func parseConfig(filePath string) (*Config, error) {
 	if math.Abs(totalPercentage-100.0) > 1e-9 {
 		return nil, errors.New("target percentages do not add up to 100")
 	}
+
+	// Validate that no symbol appears multiple times (as primary or alternative)
+	symbolOwner := make(map[string]string) // maps symbol to the primary stock that owns it
+	for _, stock := range config.Stocks {
+		// Check primary symbol
+		if owner, exists := symbolOwner[stock.Symbol]; exists {
+			return nil, fmt.Errorf("symbol %s appears multiple times (primary for both %s and %s)", stock.Symbol, owner, stock.Symbol)
+		}
+		symbolOwner[stock.Symbol] = stock.Symbol
+
+		// Check alternative symbols
+		for _, alt := range stock.Alternatives {
+			if owner, exists := symbolOwner[alt]; exists {
+				return nil, fmt.Errorf("symbol %s appears multiple times (primary/alternative for %s, alternative for %s)", alt, owner, stock.Symbol)
+			}
+			symbolOwner[alt] = stock.Symbol
+		}
+	}
+
 	return &config, nil
 }
 
