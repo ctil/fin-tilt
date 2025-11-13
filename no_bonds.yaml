@@ -1,14 +1,14 @@
 stocks:
-  - symbol: FSKAX
+  - symbol: VTI
     target_percentage: 79
     description: Total US Market
     alternatives:
-      - VTI
-  - symbol: FTIHX
+      - FSKAX
+  - symbol: VXUS
     target_percentage: 20
     description: Total International Market
     alternatives:
-      - VXUS
+      - FTIHX
   - symbol: FBTC
     target_percentage: 1
     description: Bitcoin
