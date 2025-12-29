@@ -105,6 +105,7 @@ func rebalance(config *Config, args []string) {
 		}
 	}
 	reader := csv.NewReader(file)
+	reader.FieldsPerRecord = -1 // Allow variable number of fields per record
 	amountsBySymbol := make(map[string]int)
 	total := toDeposit
 	header, err := reader.Read()
@@ -130,6 +131,10 @@ func rebalance(config *Config, args []string) {
 			}
 			fmt.Println("Error:", err)
 			return
+		}
+		// Skip rows that don't have enough fields
+		if len(record) <= symbolIndex || len(record) <= amountIndex {
+			continue
 		}
 		symbol := record[symbolIndex]
 
