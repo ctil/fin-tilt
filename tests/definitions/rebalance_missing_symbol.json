@@ -1,0 +1,34 @@
+{
+  "name": "missing_symbol_in_csv",
+  "description": "Symbol in config (BND) not present in CSV should show 0% current",
+  "command": "rebalance",
+  "config_file": "configs/simple.yaml",
+  "input": {
+    "csv_file": "portfolios/missing_symbol.csv",
+    "deposit_amount": 0
+  },
+  "expected": {
+    "total": 10000000,
+    "symbols": {
+      "VTI": {
+        "amount": 8900000,
+        "current_percentage": 89.0,
+        "drift": 18.0,
+        "amount_needed": -1800000
+      },
+      "VXUS": {
+        "amount": 1100000,
+        "current_percentage": 11.0,
+        "drift": -7.0,
+        "amount_needed": 700000
+      },
+      "BND": {
+        "amount": 0,
+        "current_percentage": 0.0,
+        "drift": -11.0,
+        "amount_needed": 1100000
+      }
+    }
+  },
+  "tolerance": 0.001
+}

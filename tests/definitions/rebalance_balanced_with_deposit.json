@@ -1,0 +1,34 @@
+{
+  "name": "balanced_portfolio_with_deposit",
+  "description": "Balanced portfolio with $10k deposit should allocate proportionally",
+  "command": "rebalance",
+  "config_file": "configs/simple.yaml",
+  "input": {
+    "csv_file": "portfolios/balanced.csv",
+    "deposit_amount": 1000000
+  },
+  "expected": {
+    "total": 11000000,
+    "symbols": {
+      "VTI": {
+        "amount": 7100000,
+        "current_percentage": 64.545454545,
+        "drift": -6.454545455,
+        "amount_needed": 710000
+      },
+      "VXUS": {
+        "amount": 1800000,
+        "current_percentage": 16.363636364,
+        "drift": -1.636363636,
+        "amount_needed": 180000
+      },
+      "BND": {
+        "amount": 1100000,
+        "current_percentage": 10.0,
+        "drift": -1.0,
+        "amount_needed": 110000
+      }
+    }
+  },
+  "tolerance": 0.001
+}

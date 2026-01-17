@@ -1,0 +1,10 @@
+stocks:
+  - symbol: VTI
+    target_percentage: 71
+    description: Vanguard Total Stock Market ETF
+  - symbol: VXUS
+    target_percentage: 18
+    description: Vanguard Total International Stock ETF
+  - symbol: BND
+    target_percentage: 11
+    description: Vanguard Total Bond Market ETF

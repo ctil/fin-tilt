@@ -1,0 +1,22 @@
+{
+  "name": "single_symbol_config",
+  "description": "Config with single symbol (100% VTI) should have zero drift",
+  "command": "rebalance",
+  "config_file": "configs/single_symbol.yaml",
+  "input": {
+    "csv_file": "portfolios/single_symbol.csv",
+    "deposit_amount": 0
+  },
+  "expected": {
+    "total": 1000000,
+    "symbols": {
+      "VTI": {
+        "amount": 1000000,
+        "current_percentage": 100.0,
+        "drift": 0.0,
+        "amount_needed": 0
+      }
+    }
+  },
+  "tolerance": 0.001
+}

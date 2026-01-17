@@ -1,0 +1,34 @@
+{
+  "name": "rounding_edge_case",
+  "description": "Non-round dollar amounts test calculation precision",
+  "command": "rebalance",
+  "config_file": "configs/simple.yaml",
+  "input": {
+    "csv_file": "portfolios/rounding.csv",
+    "deposit_amount": 0
+  },
+  "expected": {
+    "total": 3333333,
+    "symbols": {
+      "VTI": {
+        "amount": 2366667,
+        "current_percentage": 71.00001,
+        "drift": 0.00001,
+        "amount_needed": -1
+      },
+      "VXUS": {
+        "amount": 600000,
+        "current_percentage": 18.0,
+        "drift": 0.0,
+        "amount_needed": 0
+      },
+      "BND": {
+        "amount": 366666,
+        "current_percentage": 10.99998,
+        "drift": -0.00002,
+        "amount_needed": 1
+      }
+    }
+  },
+  "tolerance": 0.01
+}

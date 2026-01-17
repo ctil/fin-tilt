@@ -1,0 +1,34 @@
+{
+  "name": "large_deposit_dominates",
+  "description": "Small portfolio with large $50k deposit",
+  "command": "rebalance",
+  "config_file": "configs/simple.yaml",
+  "input": {
+    "csv_file": "portfolios/small.csv",
+    "deposit_amount": 5000000
+  },
+  "expected": {
+    "total": 5010000,
+    "symbols": {
+      "VTI": {
+        "amount": 7100,
+        "current_percentage": 0.141716567,
+        "drift": -70.858283433,
+        "amount_needed": 3550000
+      },
+      "VXUS": {
+        "amount": 1800,
+        "current_percentage": 0.035928144,
+        "drift": -17.964071856,
+        "amount_needed": 900000
+      },
+      "BND": {
+        "amount": 1100,
+        "current_percentage": 0.021956088,
+        "drift": -10.978043912,
+        "amount_needed": 550000
+      }
+    }
+  },
+  "tolerance": 0.001
+}

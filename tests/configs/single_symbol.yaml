@@ -1,0 +1,4 @@
+stocks:
+  - symbol: VTI
+    target_percentage: 100
+    description: Vanguard Total Stock Market ETF

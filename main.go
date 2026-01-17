@@ -16,11 +16,22 @@ import (
 )
 
 type SymbolData struct {
-	Amount            int
-	AmountNeeded      int
-	CurrentPercentage float64
-	TargetPercentage  float64
-	Drift             float64
+	Amount            int     `json:"amount"`
+	AmountNeeded      int     `json:"amount_needed"`
+	CurrentPercentage float64 `json:"current_percentage"`
+	TargetPercentage  float64 `json:"target_percentage"`
+	Drift             float64 `json:"drift"`
+}
+
+type RebalanceResult struct {
+	Symbols       map[string]SymbolData `json:"symbols"`
+	Total         int                   `json:"total"`
+	DepositAmount int                   `json:"deposit_amount"`
+}
+
+type DepositResult struct {
+	Allocations map[string]int `json:"allocations"`
+	Total       int            `json:"total"`
 }
 
 type Config struct {
@@ -96,78 +107,14 @@ func rebalance(config *Config, args []string) {
 	}
 	defer file.Close()
 
-	// Build a map from any symbol (primary or alternative) to its primary symbol
-	symbolToPrimary := make(map[string]string)
-	for _, stock := range config.Stocks {
-		symbolToPrimary[stock.Symbol] = stock.Symbol
-		for _, alt := range stock.Alternatives {
-			symbolToPrimary[alt] = stock.Symbol
-		}
-	}
-	reader := csv.NewReader(file)
-	reader.FieldsPerRecord = -1 // Allow variable number of fields per record
-	amountsBySymbol := make(map[string]int)
-	total := toDeposit
-	header, err := reader.Read()
+	result, err := rebalanceCalc(config, file, toDeposit)
 	if err != nil {
-		fmt.Println("Error reading header:", err)
+		fmt.Println("Error:", err)
 		return
 	}
-	symbolIndex := slices.Index(header, "Symbol")
-	amountIndex := slices.Index(header, "Current Value")
-	if symbolIndex == -1 || amountIndex == -1 {
-		fmt.Println("CSV file must have 'Symbol' and 'Current Value' columns")
-		return
-	}
-	for {
-		record, err := reader.Read()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			if errors.Is(err, csv.ErrFieldCount) {
-				// The fidelity csv has some malformed lines at the end
-				continue
-			}
-			fmt.Println("Error:", err)
-			return
-		}
-		// Skip rows that don't have enough fields
-		if len(record) <= symbolIndex || len(record) <= amountIndex {
-			continue
-		}
-		symbol := record[symbolIndex]
 
-		// Look up the primary symbol (handles both primary and alternative symbols)
-		primarySymbol, found := symbolToPrimary[symbol]
-		if !found {
-			// Ignore any symbols that are not in the config
-			continue
-		}
-
-		amount, err := amountToInt(record[amountIndex])
-		total += amount
-		amountsBySymbol[primarySymbol] += amount
-		if err != nil {
-			fmt.Println("Error parsing amount:", err)
-			return
-		}
-	}
-
-	symbolData := make(map[string]SymbolData)
 	for _, stock := range config.Stocks {
-		currentAmount := amountsBySymbol[stock.Symbol]
-		currentPercentage := (float64(currentAmount) / float64(total)) * 100
-		drift := currentPercentage - stock.TargetPercentage
-		data := SymbolData{
-			Amount:            currentAmount,
-			CurrentPercentage: currentPercentage,
-			TargetPercentage:  stock.TargetPercentage,
-			Drift:             drift,
-			AmountNeeded:      int(math.Round(float64(total) * (-drift / 100))),
-		}
-
-		symbolData[stock.Symbol] = data
+		data := result.Symbols[stock.Symbol]
 		needed := formatAmount(data.AmountNeeded, false)
 		if data.AmountNeeded > 0 {
 			needed = green("+" + needed)
@@ -189,11 +136,88 @@ func rebalance(config *Config, args []string) {
 	}
 
 	fmt.Println("\n" + strings.Repeat("-", 60))
-	if toDeposit > 0 {
-		fmt.Printf("Total: %s (includes %s deposit)\n", formatAmount(total, true), formatAmount(toDeposit, true))
+	if result.DepositAmount > 0 {
+		fmt.Printf("Total: %s (includes %s deposit)\n", formatAmount(result.Total, true), formatAmount(result.DepositAmount, true))
 	} else {
-		fmt.Printf("Total: %s\n", formatAmount(total, true))
+		fmt.Printf("Total: %s\n", formatAmount(result.Total, true))
 	}
+}
+
+func rebalanceCalc(config *Config, csvReader io.Reader, depositCents int) (*RebalanceResult, error) {
+	// Build a map from any symbol (primary or alternative) to its primary symbol
+	symbolToPrimary := make(map[string]string)
+	for _, stock := range config.Stocks {
+		symbolToPrimary[stock.Symbol] = stock.Symbol
+		for _, alt := range stock.Alternatives {
+			symbolToPrimary[alt] = stock.Symbol
+		}
+	}
+	reader := csv.NewReader(csvReader)
+	reader.FieldsPerRecord = -1 // Allow variable number of fields per record
+	amountsBySymbol := make(map[string]int)
+	total := depositCents
+	header, err := reader.Read()
+	if err != nil {
+		return nil, fmt.Errorf("error reading header: %w", err)
+	}
+	symbolIndex := slices.Index(header, "Symbol")
+	amountIndex := slices.Index(header, "Current Value")
+	if symbolIndex == -1 || amountIndex == -1 {
+		return nil, errors.New("CSV file must have 'Symbol' and 'Current Value' columns")
+	}
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if errors.Is(err, csv.ErrFieldCount) {
+				// The fidelity csv has some malformed lines at the end
+				continue
+			}
+			return nil, err
+		}
+		// Skip rows that don't have enough fields
+		if len(record) <= symbolIndex || len(record) <= amountIndex {
+			continue
+		}
+		symbol := record[symbolIndex]
+
+		// Look up the primary symbol (handles both primary and alternative symbols)
+		primarySymbol, found := symbolToPrimary[symbol]
+		if !found {
+			// Ignore any symbols that are not in the config
+			continue
+		}
+
+		amount, err := amountToInt(record[amountIndex])
+		if err != nil {
+			return nil, fmt.Errorf("error parsing amount: %w", err)
+		}
+		total += amount
+		amountsBySymbol[primarySymbol] += amount
+	}
+
+	symbolData := make(map[string]SymbolData)
+	for _, stock := range config.Stocks {
+		currentAmount := amountsBySymbol[stock.Symbol]
+		currentPercentage := (float64(currentAmount) / float64(total)) * 100
+		drift := currentPercentage - stock.TargetPercentage
+		data := SymbolData{
+			Amount:            currentAmount,
+			CurrentPercentage: currentPercentage,
+			TargetPercentage:  stock.TargetPercentage,
+			Drift:             drift,
+			AmountNeeded:      int(math.Round(float64(total) * (-drift / 100))),
+		}
+		symbolData[stock.Symbol] = data
+	}
+
+	return &RebalanceResult{
+		Symbols:       symbolData,
+		Total:         total,
+		DepositAmount: depositCents,
+	}, nil
 }
 
 func green(str string) string {
@@ -220,12 +244,27 @@ func deposit(config *Config, args []string) {
 
 	// Convert amount to cents
 	amount *= 100
+
+	result := depositCalc(config, amount)
+
+	for _, stock := range config.Stocks {
+		fmt.Printf("%s: %s\n", stock.Symbol, formatAmount(result.Allocations[stock.Symbol], false))
+	}
+}
+
+func depositCalc(config *Config, amountCents int) *DepositResult {
+	allocations := make(map[string]int)
 	total := 0
 
 	for _, stock := range config.Stocks {
-		amountToDeposit := int(math.Floor(float64(amount) * (stock.TargetPercentage / 100)))
+		amountToDeposit := int(math.Floor(float64(amountCents) * (stock.TargetPercentage / 100)))
+		allocations[stock.Symbol] = amountToDeposit
 		total += amountToDeposit
-		fmt.Printf("%s: %s\n", stock.Symbol, formatAmount(amountToDeposit, false))
+	}
+
+	return &DepositResult{
+		Allocations: allocations,
+		Total:       total,
 	}
 }
 

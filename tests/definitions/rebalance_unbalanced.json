@@ -1,0 +1,34 @@
+{
+  "name": "unbalanced_portfolio",
+  "description": "Portfolio with VTI overweight (80%), others underweight",
+  "command": "rebalance",
+  "config_file": "configs/simple.yaml",
+  "input": {
+    "csv_file": "portfolios/unbalanced.csv",
+    "deposit_amount": 0
+  },
+  "expected": {
+    "total": 10000000,
+    "symbols": {
+      "VTI": {
+        "amount": 8000000,
+        "current_percentage": 80.0,
+        "drift": 9.0,
+        "amount_needed": -900000
+      },
+      "VXUS": {
+        "amount": 1200000,
+        "current_percentage": 12.0,
+        "drift": -6.0,
+        "amount_needed": 600000
+      },
+      "BND": {
+        "amount": 800000,
+        "current_percentage": 8.0,
+        "drift": -3.0,
+        "amount_needed": 300000
+      }
+    }
+  },
+  "tolerance": 0.001
+}

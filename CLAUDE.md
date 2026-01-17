@@ -78,3 +78,19 @@ The core rebalancing logic (main.go:145-158):
 3. Calculate amount needed: `total * (-drift / 100)`
 
 Positive drift = overweight (sell/hold), negative drift = underweight (buy).
+
+# Testing
+
+Run tests with `go test -v`.
+
+Tests use a language-agnostic approach with JSON test definitions and CSV fixtures in `tests/`:
+
+```
+tests/
+├── configs/     # YAML config files for tests
+├── portfolios/  # CSV portfolio fixtures
+└── definitions/ # JSON test definitions
+```
+
+Each JSON test definition specifies a config file, input CSV, and expected results. The test runner (`main_test.go`) loads all definitions from `definitions/` and validates calculated results against expected values within a configurable tolerance.
+
